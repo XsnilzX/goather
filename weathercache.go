@@ -85,9 +85,3 @@ func load_cache() (*CacheData, error) {
 
 	return &data, nil
 }
-
-func get_time_of_cache() (time.Time) {
-	if CacheData = nil {
-		return nil
-	}
-}

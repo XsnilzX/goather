@@ -42,12 +42,8 @@ func main() {
 	// === Wetter holen ===
 	// implement weather cache
 	
-	cache_time := get_time_of_cache()
-	if cache_time = nil {
-		// create new Cache
-	}
 	
-	curent := time.Now()
+	// curent := time.Now()
 	 
 
 	
