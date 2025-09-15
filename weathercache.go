@@ -17,11 +17,11 @@ const cacheFile = "/tmp/weather_cache.json"
 
 // init_cache erstellt die Cache-Datei, falls sie noch nicht existiert.
 // Falls sie existiert, macht die Funktion nichts.
-func init_cache() error {
+func init_cache() (bool, error) {
 	// Prüfen, ob Datei schon existiert
 	if _, err := os.Stat(cacheFile); err == nil {
 		// existiert schon → nichts tun
-		return nil
+		return true, nil
 	}
 
 	// Leeren Cache anlegen
@@ -29,18 +29,18 @@ func init_cache() error {
 
 	file, err := os.Create(cacheFile)
 	if err != nil {
-		return err
+		return false, err
 	}
 	defer file.Close()
 
 	encoder := json.NewEncoder(file)
 	encoder.SetIndent("", "  ")
 	if err := encoder.Encode(empty); err != nil {
-		return err
+		return false, err
 	}
 
 	fmt.Println("Cache initialisiert:", cacheFile)
-	return nil
+	return false, nil
 }
 
 func update_cache(loc_data Location, weather_data OpenMeteoResp) {
@@ -85,3 +85,7 @@ func load_cache() (*CacheData, error) {
 
 	return &data, nil
 }
+
+func time_of_cache(cache *CacheData) (time.Duration) {
+	return time.Since(cache.time)
+}	

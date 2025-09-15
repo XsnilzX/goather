@@ -41,16 +41,42 @@ func main() {
 
 	// === Wetter holen ===
 	// implement weather cache
-	
-	
-	// curent := time.Now()
-	 
-
-	
-	api, err := FetchWeather(ctx, lat, lon, 6) // z. B. 6 Stunden Vorhersage
+	// make cache if not already exists
+	cache_new, err := init_cache()
 	if err != nil {
-		_ = json.NewEncoder(os.Stdout).Encode(WaybarOut{Text: "⚠️", Tooltip: "Weather error: " + err.Error()})
-		return
+		panic(err)
+	}
+
+	var cache *CacheData
+	// load cache
+	if cache_new == true {
+		cache, err := load_cache()
+		if err != nil {
+			panic(err)
+		}
+	}
+	
+	var old bool = true
+	cache_age := time_of_cache(cache)
+	if cache_age > time.Hour {
+		old = false
+	}
+
+	var api *OpenMeteoResp
+	if cache_new == true {
+		api, err := FetchWeather(ctx, lat, lon, 6) // z. B. 6 Stunden Vorhersage
+		if err != nil {
+			_ = json.NewEncoder(os.Stdout).Encode(WaybarOut{Text: "⚠️", Tooltip: "Weather error: " + err.Error()})
+			return
+		}
+		cache_new = false
+	}
+	
+	// update cache
+	if old == true {
+		update_cache(loc, *api)
+		println("updated cache")
+		old = false
 	}
 
 	// === Text (kurz) für Waybar ===
