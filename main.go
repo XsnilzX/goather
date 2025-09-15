@@ -40,6 +40,17 @@ func main() {
 	}{City: "Berlin", Region: "Berlin", Country: "Deutschland", Source: "demo"} */
 
 	// === Wetter holen ===
+	// implement weather cache
+	
+	cache_time := get_time_of_cache()
+	if cache_time = nil {
+		// create new Cache
+	}
+	
+	curent := time.Now()
+	 
+
+	
 	api, err := FetchWeather(ctx, lat, lon, 6) // z. B. 6 Stunden Vorhersage
 	if err != nil {
 		_ = json.NewEncoder(os.Stdout).Encode(WaybarOut{Text: "⚠️", Tooltip: "Weather error: " + err.Error()})

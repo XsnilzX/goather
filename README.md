@@ -1,2 +1,2 @@
 # goahter
-weather widget written inGo
+weather widget written in Go
