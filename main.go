@@ -50,11 +50,14 @@ func main() {
 	var cache *CacheData
 	// load cache
 	if cache_new == true {
-		cache, err := load_cache()
+		cache2, err := load_cache()
 		if err != nil {
 			panic(err)
 		}
+		cache = cache2
 	}
+
+	println("Cache loaded:")
 	
 	var old bool = true
 	cache_age := time_of_cache(cache)
@@ -64,12 +67,13 @@ func main() {
 
 	var api *OpenMeteoResp
 	if cache_new == true {
-		api, err := FetchWeather(ctx, lat, lon, 6) // z. B. 6 Stunden Vorhersage
+		api2, err := FetchWeather(ctx, lat, lon, 6) // z. B. 6 Stunden Vorhersage
 		if err != nil {
 			_ = json.NewEncoder(os.Stdout).Encode(WaybarOut{Text: "⚠️", Tooltip: "Weather error: " + err.Error()})
 			return
 		}
 		cache_new = false
+		api = api2
 	}
 	
 	// update cache
