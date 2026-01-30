@@ -1,3 +1,3 @@
-module github.com/XsnilzX/goahter
+module github.com/XsnilzX/goather
 
 go 1.25.1

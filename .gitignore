@@ -32,6 +32,8 @@ go.work.sum
 # .vscode/
 
 # binary
-goahter
+goather
 
 .direnv/
+
+result
