@@ -5,14 +5,16 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"strings"
 	"time"
 )
 
 const HOURS int8 = 8
 
-type WaybarOut struct {
-	Text    string `json:"text"`
+type QuickshellOut struct {
+	Display string `json:"display"`
 	Tooltip string `json:"tooltip"`
+	Class   string `json:"class"`
 }
 
 func main() {
@@ -28,7 +30,11 @@ func main() {
 		WithPreferFastest(false),
 	)
 	if err != nil {
-		_ = json.NewEncoder(os.Stdout).Encode(WaybarOut{Text: "⚠️", Tooltip: "Location error: " + err.Error()})
+		_ = json.NewEncoder(os.Stdout).Encode(QuickshellOut{
+			Display: "❌ Error",
+			Tooltip: "Location error: " + err.Error(),
+			Class:   "error",
+		})
 		return
 	}
 	lat, lon := loc.Lat, loc.Lon
@@ -42,70 +48,66 @@ func main() {
 	// === Wetter holen ===
 	// implement weather cache
 	// make cache if not already exists
-	cache_new, err := init_cache()
+	cacheExists, err := init_cache()
 	if err != nil {
 		panic(err)
 	}
 
 	var cache *CacheData
-	// load cache
-	if cache_new == true {
+	if cacheExists {
 		cache2, err := load_cache()
 		if err != nil {
-			panic(err)
+			_ = json.NewEncoder(os.Stdout).Encode(QuickshellOut{
+				Display: "❌ Error",
+				Tooltip: "Cache error: " + err.Error(),
+				Class:   "error",
+			})
+			return
 		}
 		cache = cache2
 	}
 
-	println("Cache loaded:")
-	
-	var old bool = true
-	cache_age := time_of_cache(cache)
-	if cache_age > time.Hour {
-		old = false
-	}
-
 	var api *OpenMeteoResp
-	if cache_new == true {
+	cacheFresh := cache != nil && time.Since(cache.time) <= time.Hour
+	if cacheFresh {
+		api = &cache.weather
+	} else {
 		api2, err := FetchWeather(ctx, lat, lon, 6) // z. B. 6 Stunden Vorhersage
 		if err != nil {
-			_ = json.NewEncoder(os.Stdout).Encode(WaybarOut{Text: "⚠️", Tooltip: "Weather error: " + err.Error()})
+			_ = json.NewEncoder(os.Stdout).Encode(QuickshellOut{
+				Display: "❌ Error",
+				Tooltip: "Weather error: " + err.Error(),
+				Class:   "error",
+			})
 			return
 		}
-		cache_new = false
 		api = api2
-	}
-	
-	// update cache
-	if old == true {
 		update_cache(loc, *api)
-		println("updated cache")
-		old = false
 	}
 
-	// === Text (kurz) für Waybar ===
+	// === Text (kurz) für Quickshell ===
 	text := fmt.Sprintf("%s %.0f°C", iconFor(api.Current.WeatherCode), api.Current.Temperature2m)
+	locationLine := fmt.Sprintf("%s, %s", loc.City, loc.Country)
+	if loc.Region != "" && loc.Region != loc.City {
+		locationLine = fmt.Sprintf("%s, %s, %s", loc.City, loc.Region, loc.Country)
+	}
 
-	// === Tooltip wie früher, nur in Go ===
-	tooltip := fmt.Sprintf(
-		"📍 %s, %s, %s\n"+
-			"<span size='xx-large'>%.0f°C</span>\n"+
-			"<big>%s %s</big>\n"+
-			"Gefühlte: %.0f°C\n"+
-			"Feuchtigkeit: %d%%\n"+
-			"Wind: %.0f km/h%s",
-		loc.City, loc.Region, loc.Country,
-		api.Current.Temperature2m,
-		iconFor(api.Current.WeatherCode),
+	tooltipLines := []string{
+		locationLine,
 		descriptionFor(api.Current.WeatherCode),
-		api.Current.ApparentTemperature,
-		int(api.Current.RelativeHumidity2),
-		api.Current.WindSpeed10m,
-		formatHourlyForecast(convertToHourly(*api), 5), // z. B. 5 Stunden anhängen
-	)
+		fmt.Sprintf("🌡️ Temperature: %.0f°C (feels %.0f°C)", api.Current.Temperature2m, api.Current.ApparentTemperature),
+		fmt.Sprintf("💧 Humidity: %d%%", int(api.Current.RelativeHumidity2)),
+		fmt.Sprintf("💨 Wind: %.0f km/h", api.Current.WindSpeed10m),
+	}
+	if forecast := formatHourlyForecast(convertToHourly(*api), 6); forecast != "" {
+		tooltipLines = append(tooltipLines, forecast)
+	}
+	tooltipLines = append(tooltipLines, fmt.Sprintf("Updated: %s", time.Now().Format("15:04")))
+	tooltip := strings.Join(tooltipLines, "\n")
 
-	_ = json.NewEncoder(os.Stdout).Encode(WaybarOut{
-		Text:    text,
+	_ = json.NewEncoder(os.Stdout).Encode(QuickshellOut{
+		Display: text,
 		Tooltip: tooltip,
+		Class:   classFor(api.Current.WeatherCode),
 	})
 }

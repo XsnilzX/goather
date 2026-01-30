@@ -2,7 +2,6 @@ package main
 
 import (
 	"encoding/json"
-	"fmt"
 	"os"
 	"time"
 )
@@ -39,7 +38,6 @@ func init_cache() (bool, error) {
 		return false, err
 	}
 
-	fmt.Println("Cache initialisiert:", cacheFile)
 	return false, nil
 }
 
@@ -67,7 +65,6 @@ func update_cache(loc_data Location, weather_data OpenMeteoResp) {
 		panic(err)
 	}
 
-	fmt.Println("Updated Cache", time.Now())
 }
 
 func load_cache() (*CacheData, error) {
@@ -86,6 +83,9 @@ func load_cache() (*CacheData, error) {
 	return &data, nil
 }
 
-func time_of_cache(cache *CacheData) (time.Duration) {
+func time_of_cache(cache *CacheData) time.Duration {
+	if cache == nil {
+		return 0
+	}
 	return time.Since(cache.time)
-}	
+}

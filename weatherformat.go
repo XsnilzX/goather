@@ -42,6 +42,27 @@ func descriptionFor(code int) string {
 	return "Unbekannt"
 }
 
+func classFor(code int) string {
+	switch code {
+	case 0, 1:
+		return "clear"
+	case 2, 3:
+		return "cloudy"
+	case 45, 48:
+		return "fog"
+	case 51, 53, 55:
+		return "drizzle"
+	case 61, 63, 65, 80, 81, 82:
+		return "rain"
+	case 71, 73, 75:
+		return "snow"
+	case 95, 96, 99:
+		return "storm"
+	default:
+		return "cloudy"
+	}
+}
+
 // Kompakter Typ nur für das Tooltip
 type HourlyForecast struct {
 	Time        time.Time
@@ -82,10 +103,10 @@ func formatHourlyForecast(hours []HourlyForecast, count int) string {
 		count = len(hours)
 	}
 	var b strings.Builder
-	b.WriteString("\n\n<b>Vorhersage:</b>\n")
+	b.WriteString("⏰ Next 6 hours:")
 	for i := 0; i < count; i++ {
 		h := hours[i]
-		b.WriteString(fmt.Sprintf("%s  %s %.0f°C\n", h.Time.Format("15h"), iconFor(h.Code), h.Temperature))
+		b.WriteString(fmt.Sprintf("\n%s %s %.0f°C", h.Time.Format("15:04"), iconFor(h.Code), h.Temperature))
 	}
 	return b.String()
 }
