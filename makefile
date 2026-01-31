@@ -1,4 +1,4 @@
-APP_NAME = goahter
+APP_NAME = goather
 CACHE_FILE = /tmp/weather_cache.json
 
 .PHONY: all debug release clean
