@@ -2,90 +2,95 @@ package main
 
 import (
 	"encoding/json"
+	"math"
 	"os"
+	"path/filepath"
 	"time"
 )
 
 type CacheData struct {
-	loc_data Location      `json:"location"`
-	weather  OpenMeteoResp `json:"weather"`
-	time     time.Time     `json:"time"`
+	SchemaVersion int           `json:"schema_version"`
+	CachedAt      time.Time     `json:"cached_at"`
+	ExpiresAt     time.Time     `json:"expires_at"`
+	Lat           float64       `json:"lat"`
+	Lon           float64       `json:"lon"`
+	Hours         int8          `json:"hours"`
+	Location      Location      `json:"location"`
+	Weather       OpenMeteoResp `json:"weather"`
 }
 
 const cacheFile = "/tmp/weather_cache.json"
+const cacheSchemaVersion = 1
+const cacheTTL = 30 * time.Minute
 
-// init_cache erstellt die Cache-Datei, falls sie noch nicht existiert.
-// Falls sie existiert, macht die Funktion nichts.
-func init_cache() (bool, error) {
-	// Prüfen, ob Datei schon existiert
-	if _, err := os.Stat(cacheFile); err == nil {
-		// existiert schon → nichts tun
-		return true, nil
-	}
-
-	// Leeren Cache anlegen
-	empty := CacheData{}
-
-	file, err := os.Create(cacheFile)
-	if err != nil {
-		return false, err
-	}
-	defer file.Close()
-
-	encoder := json.NewEncoder(file)
-	encoder.SetIndent("", "  ")
-	if err := encoder.Encode(empty); err != nil {
-		return false, err
-	}
-
-	return false, nil
-}
-
-func update_cache(loc_data Location, weather_data OpenMeteoResp) {
-	// Datei anlegen/überschreiben
-	file, err := os.Create(cacheFile)
-	if err != nil {
-		panic(err)
-	}
-	defer file.Close()
-
-	// Daten in Struct packen
-	data := CacheData{
-		loc_data: loc_data,
-		weather:  weather_data,
-		time:     time.Now(),
-	}
-
-	// JSON-Encoder vorbereiten
-	encoder := json.NewEncoder(file)
-	encoder.SetIndent("", "  ") // schön formatiert
-
-	// schreiben
-	if err := encoder.Encode(data); err != nil {
-		panic(err)
-	}
-
-}
-
-func load_cache() (*CacheData, error) {
+func LoadCache(lat, lon float64, hours int8) (*CacheData, bool, error) {
 	file, err := os.Open(cacheFile)
 	if err != nil {
-		return nil, err
+		if os.IsNotExist(err) {
+			return nil, false, nil
+		}
+		return nil, false, err
 	}
 	defer file.Close()
 
 	var data CacheData
 	decoder := json.NewDecoder(file)
 	if err := decoder.Decode(&data); err != nil {
-		return nil, err
+		return nil, false, err
 	}
 
-	return &data, nil
+	if data.SchemaVersion != cacheSchemaVersion {
+		return nil, false, nil
+	}
+	if data.ExpiresAt.IsZero() || time.Now().After(data.ExpiresAt) {
+		return nil, false, nil
+	}
+	if data.Hours != hours || !approxEqual(data.Lat, lat) || !approxEqual(data.Lon, lon) {
+		return nil, false, nil
+	}
+
+	return &data, true, nil
 }
 
-func time_of_cache(cache *CacheData) time.Duration {
-	if cache == nil {
-		return 0
+func SaveCache(loc Location, weather OpenMeteoResp, lat, lon float64, hours int8) error {
+	cacheDir := filepath.Dir(cacheFile)
+	file, err := os.CreateTemp(cacheDir, "weather_cache_*.json")
+	if err != nil {
+		return err
 	}
-	return time.Since(cache.time)
+
+	tempName := file.Name()
+	defer os.Remove(tempName)
+
+	now := time.Now()
+	data := CacheData{
+		SchemaVersion: cacheSchemaVersion,
+		CachedAt:      now,
+		ExpiresAt:     now.Add(cacheTTL),
+		Lat:           lat,
+		Lon:           lon,
+		Hours:         hours,
+		Location:      loc,
+		Weather:       weather,
+	}
+
+	encoder := json.NewEncoder(file)
+	encoder.SetIndent("", "  ")
+	if err := encoder.Encode(data); err != nil {
+		_ = file.Close()
+		return err
+	}
+	if err := file.Close(); err != nil {
+		return err
+	}
+
+	if err := os.Rename(tempName, cacheFile); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func approxEqual(a, b float64) bool {
+	return math.Abs(a-b) <= 0.0001
 }

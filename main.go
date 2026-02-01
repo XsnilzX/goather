@@ -46,33 +46,23 @@ func main() {
 	}{City: "Berlin", Region: "Berlin", Country: "Deutschland", Source: "demo"} */
 
 	// === Wetter holen ===
-	// implement weather cache
-	// make cache if not already exists
-	cacheExists, err := init_cache()
-	if err != nil {
-		panic(err)
-	}
+	hours := int8(6)
 
-	var cache *CacheData
-	if cacheExists {
-		cache2, err := load_cache()
-		if err != nil {
-			_ = json.NewEncoder(os.Stdout).Encode(QuickshellOut{
-				Display: "❌ Error",
-				Tooltip: "Cache error: " + err.Error(),
-				Class:   "error",
-			})
-			return
-		}
-		cache = cache2
+	cache, cacheHit, err := LoadCache(lat, lon, hours)
+	if err != nil {
+		_ = json.NewEncoder(os.Stdout).Encode(QuickshellOut{
+			Display: "❌ Error",
+			Tooltip: "Cache error: " + err.Error(),
+			Class:   "error",
+		})
+		return
 	}
 
 	var api *OpenMeteoResp
-	cacheFresh := cache != nil && time.Since(cache.time) <= time.Hour
-	if cacheFresh {
-		api = &cache.weather
+	if cacheHit {
+		api = &cache.Weather
 	} else {
-		api2, err := FetchWeather(ctx, lat, lon, 6) // z. B. 6 Stunden Vorhersage
+		api2, err := FetchWeather(ctx, lat, lon, hours) // z. B. 6 Stunden Vorhersage
 		if err != nil {
 			_ = json.NewEncoder(os.Stdout).Encode(QuickshellOut{
 				Display: "❌ Error",
@@ -82,7 +72,7 @@ func main() {
 			return
 		}
 		api = api2
-		update_cache(loc, *api)
+		_ = SaveCache(loc, *api, lat, lon, hours)
 	}
 
 	// === Text (kurz) für Quickshell ===
