@@ -11,7 +11,15 @@
     nixpkgs,
     flake-utils,
   }:
-    flake-utils.lib.eachDefaultSystem (system: let
+    let
+      supportedSystems = [
+        "x86_64-linux"
+        "aarch64-linux"
+        "x86_64-darwin"
+        "aarch64-darwin"
+      ];
+    in
+    flake-utils.lib.eachSystem supportedSystems (system: let
       pkgs = nixpkgs.legacyPackages.${system};
       version = "1.0.4";
     in {
@@ -47,9 +55,9 @@
             description = "Weather widget for Quickshell/Hyprland";
             homepage = "https://github.com/XsnilzX/goather";
             license = licenses.mit;
-            maintainers = [maintainers.XsnilzX]; # Optional: maintainers.DEIN_NAME
+            maintainers = [maintainers.XsnilzX];
             mainProgram = "goather";
-            platforms = platforms.linux;
+            platforms = platforms.unix;
           };
         };
 
@@ -60,14 +68,17 @@
       devShells.default = pkgs.mkShell {
         inputsFrom = [self.packages.${system}.goather];
 
-        packages = with pkgs; [
-          go
-          gopls
-          gotools
-          go-tools
-          delve
-          golangci-lint
-        ];
+        packages = with pkgs;
+          [
+            go
+            gopls
+            gotools
+            go-tools
+          ]
+          ++ pkgs.lib.optionals pkgs.stdenv.isLinux [
+            delve
+            golangci-lint
+          ];
 
         shellHook = ''
           echo "🌤️  Goather Development Environment"
@@ -85,6 +96,9 @@
       apps.default = {
         type = "app";
         program = "${self.packages.${system}.goather}/bin/goather";
+        meta = {
+          description = "Run goather weather widget";
+        };
       };
     })
     # System-unabhängige Outputs

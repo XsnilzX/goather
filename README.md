@@ -1,5 +1,7 @@
 # goather
 
+[![Flake Check](https://github.com/XsnilzX/goather/actions/workflows/flake-check.yml/badge.svg)](https://github.com/XsnilzX/goather/actions/workflows/flake-check.yml)
+
 A small Go-based weather widget that prints JSON for Quickshell/Waybar. It uses
 IP-based geolocation, fetches weather from Open-Meteo, and keeps a short cache
 in `/tmp/weather_cache.json`.
@@ -102,6 +104,11 @@ make
 - Go version: 1.25.1
 - Format: `gofmt -w .`
 - Tests: `go test ./...`
+
+## CI
+
+- Flake checks run on pull requests and pushes to `main`/`master`.
+- Full multi-system validation: `nix flake check --all-systems`.
 
 ## License
 
