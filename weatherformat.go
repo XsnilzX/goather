@@ -81,7 +81,7 @@ func convertToHourly(api OpenMeteoResp) []HourlyForecast {
 	}
 	out := make([]HourlyForecast, 0, n)
 	for i := 0; i < n; i++ {
-		t, err := time.Parse(time.RFC3339, api.Hourly.Time[i])
+		t, err := parseForecastTime(api.Hourly.Time[i])
 		if err != nil {
 			continue
 		}
@@ -92,6 +92,14 @@ func convertToHourly(api OpenMeteoResp) []HourlyForecast {
 		})
 	}
 	return out
+}
+
+func parseForecastTime(value string) (time.Time, error) {
+	t, err := time.Parse("2006-01-02T15:04", value)
+	if err == nil {
+		return t, nil
+	}
+	return time.Parse(time.RFC3339, value)
 }
 
 // Baut den Mehrstunden-Block (z. B. 5 Stunden) fürs Tooltip

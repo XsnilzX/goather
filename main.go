@@ -11,8 +11,8 @@ import (
 
 const HOURS int8 = 8
 
-type QuickshellOut struct {
-	Display string `json:"display"`
+type WaybarOutput struct {
+	Text    string `json:"text"`
 	Tooltip string `json:"tooltip"`
 	Class   string `json:"class"`
 }
@@ -30,8 +30,8 @@ func main() {
 		WithPreferFastest(false),
 	)
 	if err != nil {
-		_ = json.NewEncoder(os.Stdout).Encode(QuickshellOut{
-			Display: "❌ Error",
+		_ = json.NewEncoder(os.Stdout).Encode(WaybarOutput{
+			Text:    "❌ Error",
 			Tooltip: "Location error: " + err.Error(),
 			Class:   "error",
 		})
@@ -50,8 +50,8 @@ func main() {
 
 	cache, cacheHit, err := LoadCache(lat, lon, hours)
 	if err != nil {
-		_ = json.NewEncoder(os.Stdout).Encode(QuickshellOut{
-			Display: "❌ Error",
+		_ = json.NewEncoder(os.Stdout).Encode(WaybarOutput{
+			Text:    "❌ Error",
 			Tooltip: "Cache error: " + err.Error(),
 			Class:   "error",
 		})
@@ -64,8 +64,8 @@ func main() {
 	} else {
 		api2, err := FetchWeather(ctx, lat, lon, hours) // z. B. 6 Stunden Vorhersage
 		if err != nil {
-			_ = json.NewEncoder(os.Stdout).Encode(QuickshellOut{
-				Display: "❌ Error",
+			_ = json.NewEncoder(os.Stdout).Encode(WaybarOutput{
+				Text:    "❌ Error",
 				Tooltip: "Weather error: " + err.Error(),
 				Class:   "error",
 			})
@@ -75,7 +75,7 @@ func main() {
 		_ = SaveCache(loc, *api, lat, lon, hours)
 	}
 
-	// === Text (kurz) für Quickshell ===
+	// === Text (kurz) für Waybar ===
 	text := fmt.Sprintf("%s %.0f°C", iconFor(api.Current.WeatherCode), api.Current.Temperature2m)
 	locationLine := fmt.Sprintf("%s, %s", loc.City, loc.Country)
 	if loc.Region != "" && loc.Region != loc.City {
@@ -95,8 +95,8 @@ func main() {
 	tooltipLines = append(tooltipLines, fmt.Sprintf("Updated: %s", time.Now().Format("15:04")))
 	tooltip := strings.Join(tooltipLines, "\n")
 
-	_ = json.NewEncoder(os.Stdout).Encode(QuickshellOut{
-		Display: text,
+	_ = json.NewEncoder(os.Stdout).Encode(WaybarOutput{
+		Text:    text,
 		Tooltip: tooltip,
 		Class:   classFor(api.Current.WeatherCode),
 	})

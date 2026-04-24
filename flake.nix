@@ -1,5 +1,5 @@
 {
-  description = "Weather widget for Quickshell written in Go";
+  description = "Weather widget for Waybar written in Go";
 
   inputs = {
     nixpkgs.url = "github:nixos/nixpkgs/nixos-unstable";
@@ -52,7 +52,7 @@
           tags = ["netgo" "osusergo"];
 
           meta = with pkgs.lib; {
-            description = "Weather widget for Quickshell/Hyprland";
+            description = "Weather widget for Waybar";
             homepage = "https://github.com/XsnilzX/goather";
             license = licenses.mit;
             maintainers = [maintainers.XsnilzX];

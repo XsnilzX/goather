@@ -19,12 +19,19 @@ type CacheData struct {
 	Weather       OpenMeteoResp `json:"weather"`
 }
 
-const cacheFile = "/tmp/weather_cache.json"
 const cacheSchemaVersion = 1
 const cacheTTL = 30 * time.Minute
 
+func cacheFilePath() string {
+	dir, err := os.UserCacheDir()
+	if err != nil || dir == "" {
+		return filepath.Join(os.TempDir(), "goather", "weather.json")
+	}
+	return filepath.Join(dir, "goather", "weather.json")
+}
+
 func LoadCache(lat, lon float64, hours int8) (*CacheData, bool, error) {
-	file, err := os.Open(cacheFile)
+	file, err := os.Open(cacheFilePath())
 	if err != nil {
 		if os.IsNotExist(err) {
 			return nil, false, nil
@@ -53,7 +60,11 @@ func LoadCache(lat, lon float64, hours int8) (*CacheData, bool, error) {
 }
 
 func SaveCache(loc Location, weather OpenMeteoResp, lat, lon float64, hours int8) error {
+	cacheFile := cacheFilePath()
 	cacheDir := filepath.Dir(cacheFile)
+	if err := os.MkdirAll(cacheDir, 0o755); err != nil {
+		return err
+	}
 	file, err := os.CreateTemp(cacheDir, "weather_cache_*.json")
 	if err != nil {
 		return err
