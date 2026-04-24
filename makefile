@@ -1,5 +1,6 @@
 APP_NAME = goather
-CACHE_FILE = /tmp/weather_cache.json
+CACHE_BASE := $(if $(XDG_CACHE_HOME),$(XDG_CACHE_HOME),$(HOME)/.cache)
+CACHE_FILE = $(CACHE_BASE)/goather/weather.json
 
 .PHONY: all debug release clean
 
@@ -18,4 +19,3 @@ release:
 clean:
 	rm -f $(APP_NAME)
 	rm -f $(CACHE_FILE)
-

@@ -2,13 +2,13 @@
 
 [![Flake Check](https://github.com/XsnilzX/goather/actions/workflows/flake-check.yml/badge.svg)](https://github.com/XsnilzX/goather/actions/workflows/flake-check.yml)
 
-A small Go-based weather widget that prints JSON for Quickshell/Waybar. It uses
-IP-based geolocation, fetches weather from Open-Meteo, and keeps a short cache
-in `/tmp/weather_cache.json`.
+A small Go-based weather widget that prints JSON for Waybar. It uses IP-based
+geolocation, fetches weather from Open-Meteo, and keeps a short cache in
+`${XDG_CACHE_HOME:-~/.cache}/goather/weather.json`.
 
 ## Features
 
-- JSON output with `display`, `tooltip`, and `class` fields
+- JSON output with `text`, `tooltip`, and `class` fields
 - IP geolocation with concurrent providers
 - Hourly forecast snippet in the tooltip
 - Simple cache to reduce API calls
@@ -86,11 +86,29 @@ Example output:
 
 ```json
 {
-  "display": "☀️ 21°C",
-  "tooltip": "City, Country\nSonnig\n🌡️ Temperature: 21°C (feels 20°C)\n💧 Humidity: 40%\n💨 Wind: 12 km/h\nUpdated: 14:05",
+  "text": "☀️ 21°C",
+  "tooltip": "City, Country\nKlarer Himmel\n🌡️ Temperature: 21°C (feels 20°C)\n💧 Humidity: 40%\n💨 Wind: 12 km/h\n⏰ Next 6 hours:\n14:00 ☀️ 21°C\n15:00 🌤️ 22°C\nUpdated: 14:05",
   "class": "clear"
 }
 ```
+
+### Waybar example
+
+```json
+"custom/weather": {
+  "exec": "goather",
+  "return-type": "json",
+  "interval": 1800,
+  "format": "{text}",
+  "tooltip": true
+}
+```
+
+`goather` is a one-shot CLI. Waybar should handle refreshes via `interval` or a
+signal-driven setup.
+
+Geolocation is IP-based, so VPNs, proxies, or privacy relays can affect the
+detected location.
 
 ## Build from source (non-Nix)
 
@@ -101,7 +119,7 @@ make
 
 ## Development
 
-- Go version: 1.25.1
+- Go version: 1.26.1
 - Format: `gofmt -w .`
 - Tests: `go test ./...`
 
