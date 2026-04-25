@@ -122,7 +122,7 @@
 
           package = lib.mkOption {
             type = lib.types.package;
-            default = self.packages.${pkgs.system}.goather;
+            default = self.packages.${pkgs.stdenv.hostPlatform.system}.goather;
             description = "The goather package to use";
           };
         };
@@ -146,7 +146,7 @@
 
           package = lib.mkOption {
             type = lib.types.package;
-            default = self.packages.${pkgs.system}.goather;
+            default = self.packages.${pkgs.stdenv.hostPlatform.system}.goather;
             description = "The goather package to use";
           };
         };
